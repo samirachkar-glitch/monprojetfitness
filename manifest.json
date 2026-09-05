@@ -1,6 +1,6 @@
 {
-  "name": "Suivi Fitness Complet",
-  "short_name": "Suivi Fitness",
+  "name": "Fitness Goals Complet",
+  "short_name": "Fitness Goals",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f7f6",
