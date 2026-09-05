@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#315f55">
+<link rel="manifest" href="manifest.json">
+<title>Suivi Fitness Complet</title>
+<style>
+:root{--bg:#f4f7f6;--card:#fff;--ink:#20302c;--muted:#72807c;--accent:#315f55;--soft:#dceae5;--line:#dbe2df;--good:#dff1e9;--warn:#fff2cf;--bad:#f6dddd}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:900px;margin:auto;padding:12px 12px 40px}
+header{padding:6px 2px 10px} h1{margin:0;font-size:25px}.muted{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:7px;overflow:auto;padding:4px 0 10px;position:sticky;top:0;background:var(--bg);z-index:5}
+.tab{white-space:nowrap;border:0;border-radius:999px;padding:10px 14px;background:#e7eeeb;color:var(--ink);font-weight:700}
+.tab.active{background:var(--accent);color:#fff}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid #edf0ef;border-radius:17px;padding:14px;margin:10px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--soft);border-radius:13px;padding:10px;text-align:center}.stat b{display:block;font-size:18px}
+label{display:block;font-weight:700;margin:8px 0 5px}
+input,select,textarea{width:100%;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:11px;background:white} textarea{min-height:96px;resize:vertical}.reportline{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f0}.reportline:last-child{border-bottom:0}.positive{color:#2f6b57}.negative{color:#9a4a45}
+button{font-size:15px;min-height:42px;border:0;border-radius:11px;padding:9px 12px;font-weight:700}
+.primary{background:var(--accent);color:white}.secondary{background:#e8efec;color:var(--ink)}.danger{background:#f4dddd;color:#6d2c2c}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.check{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eef1f0}
+.check input{width:24px;height:24px;accent-color:var(--accent)}
+.gymtypes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.gymtype{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-weight:700}.gymtype input{width:22px;height:22px;accent-color:var(--accent);flex:0 0 auto}.gymweek{margin-top:10px;padding:10px;border-radius:12px;background:var(--soft)}.gymweek b{font-size:18px}.gymlist{font-size:12px;color:var(--muted);margin-top:4px}@media(max-width:420px){.gymtypes{grid-template-columns:1fr}}
+.progress{height:12px;border-radius:99px;background:#e8eeeb;overflow:hidden}.bar{height:100%;background:var(--accent)}
+.foodrow{display:grid;grid-template-columns:1fr 76px 38px;gap:7px;align-items:center;padding:9px 0;border-bottom:1px solid #eef1f0}
+.foodmeta{font-size:12px;color:var(--muted)}
+.macros{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.macro{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}.macro b{display:block;font-size:17px}
+canvas{width:100%;height:220px;border-radius:12px;background:#fff}
+.tablewrap{overflow:auto}.track{border-collapse:collapse;width:100%;min-width:700px;font-size:12px}.track th,.track td{border-bottom:1px solid var(--line);padding:7px;text-align:center}.track th{background:#f3f6f5}
+.small{font-size:12px;color:var(--muted)} .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:var(--soft);font-size:12px}
+.install{display:none;width:100%;margin-bottom:8px}
+@media(max-width:560px){.grid4{grid-template-columns:1fr 1fr}.macros{grid-template-columns:1fr 1fr}.foodrow{grid-template-columns:1fr 68px 38px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<button id="installBtn" class="primary install">Installer l’application</button>
+<header><h1>Mon suivi fitness</h1><div id="goalSummary" class="muted">Objectifs personnalisables selon la période</div></header>
+
+<nav class="tabs">
+<button class="tab active" data-page="today">Aujourd’hui</button>
+<button class="tab" data-page="food">Alimentation</button>
+<button class="tab" data-page="charts">Courbes</button>
+<button class="tab" data-page="table">Tableau</button>
+<button class="tab" data-page="settings">Réglages</button>
+</nav>
+
+<section id="today" class="page active">
+<div class="card">
+<label>Date</label><input id="dayDate" type="date">
+<div class="grid4" style="margin-top:10px">
+<div class="stat"><b id="sKcal">0</b>kcal</div>
+<div class="stat"><b id="sProt">0</b>g prot.</div>
+<div class="stat"><b id="sSteps">0</b>pas</div>
+<div class="stat"><b id="sSleep">0</b>h sommeil</div>
+</div>
+</div>
+<div class="card">
+<h3>Activité & récupération</h3>
+<div class="grid2"><div><label>Pas</label><input id="steps" type="number" min="0"></div><div><label>Sommeil (h)</label><input id="sleep" type="number" min="0" step="0.25"></div></div>
+<div><label>Poids (kg)</label><input id="weight" type="number" min="0" step="0.1"></div>
+<div style="margin-top:12px"><label>Séance de gym du jour</label>
+<div class="gymtypes" id="gymTypes">
+<label class="gymtype"><input id="gymBack" type="checkbox" data-gym-type="back"> Back</label>
+<label class="gymtype"><input id="gymGlutes" type="checkbox" data-gym-type="glutes"> Glutes</label>
+<label class="gymtype"><input id="gymBicepsChest" type="checkbox" data-gym-type="biceps_chest"> Biceps + Chest</label>
+<label class="gymtype"><input id="gymTricepsShoulders" type="checkbox" data-gym-type="triceps_shoulders"> Triceps + Shoulders</label>
+</div>
+<div class="small" id="legacyGymNote" style="display:none;margin-top:6px">Une séance avait été enregistrée ce jour-là dans l’ancienne version, sans type précisé.</div>
+<div class="gymweek"><b id="gymWeekCount">0/4 séances cette semaine</b><div id="gymWeekList" class="gymlist">Aucune séance enregistrée.</div></div>
+</div>
+</div>
+<div class="card">
+<h3>Suppléments</h3>
+<div class="check"><span>Magnésium</span><input id="magnesium" type="checkbox"></div>
+<div class="check"><span>Vitamine D</span><input id="vitd" type="checkbox"></div>
+<div class="check"><span>Oméga-3</span><input id="omega3" type="checkbox"></div>
+<div class="check"><span>Créatine</span><input id="creatine" type="checkbox"></div>
+<div class="check"><span>Whey protein</span><input id="whey" type="checkbox"></div>
+</div>
+<div class="card">
+<h3>Objectifs du jour</h3><div id="dailyPct" style="font-size:28px;font-weight:800">0%</div><div class="progress"><div id="dailyBar" class="bar" style="width:0%"></div></div>
+</div>
+<div class="actions"><button id="saveDay" class="primary">Enregistrer la journée</button><button id="clearDay" class="danger">Effacer</button></div>
+</section>
+
+<section id="food" class="page">
+<div class="card">
+<label>Date du journal alimentaire</label><input id="foodDate" type="date">
+</div>
+<div class="card">
+<h3>Ajouter un aliment</h3>
+<div class="grid2"><div><label>Catégorie</label><select id="foodCategory"></select></div><div><label>Rechercher</label><input id="foodSearch" placeholder="Ex. pomme, poulet, lentilles…"></div></div>
+<label>Aliment</label><select id="foodSelect"></select>
+<div class="grid2"><div><label>Quantité (g/ml)</label><input id="foodQty" type="number" min="1" value="100"></div><div style="display:flex;align-items:end"><button id="addFood" class="primary" style="width:100%">Ajouter</button></div></div>
+<div id="foodDbCount" class="small"></div>
+<div class="small">Valeurs nutritionnelles moyennes pour 100 g/ml. Pour un produit emballé, l’étiquette reste la référence la plus précise.</div>
+</div>
+
+<div class="card">
+<h3>Aliment personnalisé</h3>
+<div class="grid2"><div><label>Nom</label><input id="customName" placeholder="Ex. granola"></div><div><label>Quantité mangée (g)</label><input id="customQty" type="number" value="100"></div></div>
+<div class="grid4">
+<div><label>kcal /100g</label><input id="customKcal" type="number"></div>
+<div><label>Prot. /100g</label><input id="customP" type="number" step="0.1"></div>
+<div><label>Gluc. /100g</label><input id="customC" type="number" step="0.1"></div>
+<div><label>Lip. /100g</label><input id="customF" type="number" step="0.1"></div>
+</div>
+<label class="check" style="margin-top:8px"><span>Enregistrer dans “Mes aliments”</span><input id="saveCustom" type="checkbox"></label><button id="addCustom" class="secondary" style="width:100%;margin-top:9px">Ajouter au journal</button>
+<div id="myFoods" class="small" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+<h3>Assistant repas IA</h3>
+<div class="small">Décris ton repas comme tu le dirais normalement. L’IA estime les portions et les valeurs nutritionnelles, puis ajoute automatiquement les ingrédients au journal de la date sélectionnée.</div>
+<label>Description du repas</label><textarea id="aiMeal" placeholder="Ex. 150 g de poulet grillé, 180 g de riz basmati cuit, 1/2 avocat et une pomme"></textarea>
+<div class="actions"><button id="analyzeAiMeal" class="primary">Analyser et ajouter</button><button id="clearAiMeal" class="secondary">Effacer</button></div>
+<div id="aiStatus" class="small" style="margin-top:9px"></div>
+<div id="aiResult" style="margin-top:8px"></div>
+<div class="small">Les valeurs fournies par l’IA sont des estimations : pour les produits emballés ou les recettes précises, privilégie l’étiquette ou les quantités pesées. La clé OpenAI reste uniquement sur le serveur et n’est jamais enregistrée dans l’app.</div>
+</div>
+
+<div class="card">
+<h3>Bilan nutritionnel du jour</h3><div id="nutritionReport"></div>
+</div>
+
+<div class="card">
+<h3>Total de la journée</h3>
+<div class="macros">
+<div class="macro"><b id="totKcal">0</b>kcal</div><div class="macro"><b id="totP">0</b>protéines</div><div class="macro"><b id="totC">0</b>glucides</div><div class="macro"><b id="totF">0</b>lipides</div>
+</div>
+</div>
+<div class="card"><h3>Ce que j’ai mangé</h3><div id="foodList"></div></div>
+</section>
+
+<section id="charts" class="page">
+<div class="card"><h3>Poids</h3><canvas id="weightChart" width="700" height="220"></canvas></div>
+<div class="card"><h3>Calories</h3><canvas id="kcalChart" width="700" height="220"></canvas></div>
+<div class="card"><h3>Protéines</h3><canvas id="proteinChart" width="700" height="220"></canvas></div>
+<div class="card"><h3>Pas</h3><canvas id="stepsChart" width="700" height="220"></canvas></div>
+<div class="card"><h3>Sommeil</h3><canvas id="sleepChart" width="700" height="220"></canvas></div>
+</section>
+
+<section id="table" class="page">
+<div class="card">
+<h3>Suivi du mois</h3>
+<div class="tablewrap"><table class="track"><thead><tr><th>Jour</th><th>kcal</th><th>Prot.</th><th>Gluc.</th><th>Lip.</th><th>Pas</th><th>Sommeil</th><th>Poids</th><th>Gym</th><th>Suppl.</th></tr></thead><tbody id="monthBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="settings" class="page">
+<div class="card">
+<h3>Mes objectifs</h3>
+<div class="small">Tu peux modifier tes objectifs au fil du temps. Chaque nouvelle version s'applique à partir de la date choisie sans modifier les objectifs des jours précédents.</div>
+<label>Appliquer ces objectifs à partir du</label><input id="goalStartDate" type="date">
+<div class="grid2">
+<div><label>Calories</label><input id="goalKcal" type="number" value="1600"></div>
+<div><label>Protéines (g)</label><input id="goalP" type="number" value="115"></div>
+<div><label>Glucides (g)</label><input id="goalC" type="number" value="160"></div>
+<div><label>Lipides (g)</label><input id="goalF" type="number" value="55"></div>
+<div><label>Pas</label><input id="goalSteps" type="number" value="8000"></div>
+<div><label>Sommeil (h)</label><input id="goalSleep" type="number" value="8"></div>
+</div>
+<button id="saveGoals" class="primary" style="width:100%;margin-top:10px">Enregistrer cette version des objectifs</button>
+</div>
+<div class="card"><h3>Historique des objectifs</h3><div id="goalHistory" class="small"></div></div>
+<div class="card"><h3>Sauvegarde</h3><button id="exportData" class="secondary" style="width:100%">Exporter mes données</button><label>Importer une sauvegarde</label><input id="importData" type="file" accept="application/json"></div>
+</section>
+</div>
+
+<script>
+const FOOD_DB = [{"cat":"Viandes & œufs","name":"Poulet, blanc cuit","kcal":165,"p":31,"c":0,"f":3.6},{"cat":"Viandes & œufs","name":"Poulet, cuisse cuite sans peau","kcal":209,"p":26,"c":0,"f":10.9},{"cat":"Viandes & œufs","name":"Dinde, blanc cuit","kcal":135,"p":29,"c":0,"f":1.6},{"cat":"Viandes & œufs","name":"Canard, magret cuit","kcal":200,"p":28,"c":0,"f":9},{"cat":"Viandes & œufs","name":"Boeuf steak 5% cuit","kcal":172,"p":26,"c":0,"f":7},{"cat":"Viandes & œufs","name":"Boeuf steak 15% cuit","kcal":250,"p":26,"c":0,"f":17},{"cat":"Viandes & œufs","name":"Boeuf haché 5% cru","kcal":137,"p":21,"c":0,"f":5},{"cat":"Viandes & œufs","name":"Veau escalope cuite","kcal":172,"p":31,"c":0,"f":4.5},{"cat":"Viandes & œufs","name":"Porc filet cuit","kcal":190,"p":29,"c":0,"f":7},{"cat":"Viandes & œufs","name":"Jambon blanc découenné","kcal":116,"p":20,"c":1,"f":3.5},{"cat":"Viandes & œufs","name":"Jambon cru","kcal":241,"p":31,"c":0.5,"f":13},{"cat":"Viandes & œufs","name":"Agneau gigot cuit","kcal":206,"p":29,"c":0,"f":9},{"cat":"Viandes & œufs","name":"Lapin cuit","kcal":173,"p":33,"c":0,"f":3.5},{"cat":"Viandes & œufs","name":"Oeuf entier","kcal":143,"p":13,"c":0.7,"f":9.5},{"cat":"Viandes & œufs","name":"Blanc d’oeuf","kcal":52,"p":11,"c":0.7,"f":0.2},{"cat":"Viandes & œufs","name":"Jaune d’oeuf","kcal":322,"p":16,"c":3.6,"f":27},{"cat":"Viandes & œufs","name":"Omelette nature","kcal":154,"p":11,"c":1.6,"f":12},{"cat":"Poissons & fruits de mer","name":"Saumon cuit","kcal":208,"p":20,"c":0,"f":13},{"cat":"Poissons & fruits de mer","name":"Thon au naturel","kcal":116,"p":26,"c":0,"f":1},{"cat":"Poissons & fruits de mer","name":"Thon frais cuit","kcal":184,"p":30,"c":0,"f":6},{"cat":"Poissons & fruits de mer","name":"Cabillaud cuit","kcal":105,"p":23,"c":0,"f":0.9},{"cat":"Poissons & fruits de mer","name":"Colin cuit","kcal":92,"p":20,"c":0,"f":1},{"cat":"Poissons & fruits de mer","name":"Merlu cuit","kcal":90,"p":19,"c":0,"f":1.4},{"cat":"Poissons & fruits de mer","name":"Truite cuite","kcal":168,"p":24,"c":0,"f":7},{"cat":"Poissons & fruits de mer","name":"Sardines en boîte à l’huile égouttées","kcal":208,"p":25,"c":0,"f":11},{"cat":"Poissons & fruits de mer","name":"Maquereau cuit","kcal":262,"p":24,"c":0,"f":18},{"cat":"Poissons & fruits de mer","name":"Crevettes cuites","kcal":99,"p":24,"c":0.2,"f":0.3},{"cat":"Poissons & fruits de mer","name":"Moules cuites","kcal":172,"p":24,"c":7,"f":4.5},{"cat":"Poissons & fruits de mer","name":"Saint-Jacques cuites","kcal":111,"p":20,"c":5,"f":1},{"cat":"Poissons & fruits de mer","name":"Surimi","kcal":99,"p":8,"c":13,"f":1},{"cat":"Poissons & fruits de mer","name":"Anchois à l’huile égouttés","kcal":210,"p":29,"c":0,"f":10},{"cat":"Produits laitiers","name":"Skyr nature","kcal":63,"p":11,"c":4,"f":0.2},{"cat":"Produits laitiers","name":"Fromage blanc 0%","kcal":45,"p":8,"c":4,"f":0.2},{"cat":"Produits laitiers","name":"Fromage blanc 3%","kcal":75,"p":8,"c":4,"f":3},{"cat":"Produits laitiers","name":"Yaourt nature","kcal":61,"p":3.5,"c":4.7,"f":3.3},{"cat":"Produits laitiers","name":"Yaourt grec 2%","kcal":73,"p":10,"c":3.9,"f":2},{"cat":"Produits laitiers","name":"Yaourt grec 10%","kcal":133,"p":6,"c":4,"f":10},{"cat":"Produits laitiers","name":"Lait écrémé","kcal":35,"p":3.4,"c":5,"f":0.1},{"cat":"Produits laitiers","name":"Lait demi-écrémé","kcal":46,"p":3.4,"c":4.8,"f":1.6},{"cat":"Produits laitiers","name":"Lait entier","kcal":64,"p":3.3,"c":4.8,"f":3.6},{"cat":"Produits laitiers","name":"Mozzarella","kcal":250,"p":18,"c":2,"f":19},{"cat":"Produits laitiers","name":"Feta","kcal":264,"p":14,"c":4,"f":21},{"cat":"Produits laitiers","name":"Emmental","kcal":380,"p":28,"c":0.5,"f":29},{"cat":"Produits laitiers","name":"Comté","kcal":417,"p":28,"c":0.5,"f":33},{"cat":"Produits laitiers","name":"Chèvre frais","kcal":240,"p":16,"c":2,"f":19},{"cat":"Produits laitiers","name":"Cottage cheese","kcal":98,"p":11,"c":3.4,"f":4.3},{"cat":"Produits laitiers","name":"Ricotta","kcal":174,"p":11,"c":3,"f":13},{"cat":"Produits laitiers","name":"Parmesan","kcal":431,"p":38,"c":4,"f":29},{"cat":"Féculents & céréales","name":"Riz blanc cuit","kcal":130,"p":2.7,"c":28,"f":0.3},{"cat":"Féculents & céréales","name":"Riz complet cuit","kcal":123,"p":2.7,"c":25.6,"f":1},{"cat":"Féculents & céréales","name":"Riz basmati cuit","kcal":121,"p":3.5,"c":25,"f":0.4},{"cat":"Féculents & céréales","name":"Riz sauvage cuit","kcal":101,"p":4,"c":21,"f":0.3},{"cat":"Féculents & céréales","name":"Pâtes blanches cuites","kcal":158,"p":5.8,"c":31,"f":0.9},{"cat":"Féculents & céréales","name":"Pâtes complètes cuites","kcal":149,"p":5.5,"c":30,"f":1.4},{"cat":"Féculents & céréales","name":"Quinoa cuit","kcal":120,"p":4.4,"c":21.3,"f":1.9},{"cat":"Féculents & céréales","name":"Boulgour cuit","kcal":83,"p":3.1,"c":18.6,"f":0.2},{"cat":"Féculents & céréales","name":"Semoule de blé cuite","kcal":112,"p":3.8,"c":23,"f":0.2},{"cat":"Féculents & céréales","name":"Couscous cuit","kcal":112,"p":3.8,"c":23,"f":0.2},{"cat":"Féculents & céréales","name":"Orge perlée cuite","kcal":123,"p":2.3,"c":28,"f":0.4},{"cat":"Féculents & céréales","name":"Sarrasin cuit","kcal":92,"p":3.4,"c":19.9,"f":0.6},{"cat":"Féculents & céréales","name":"Polenta cuite","kcal":70,"p":1.5,"c":15,"f":0.4},{"cat":"Féculents & céréales","name":"Pommes de terre vapeur","kcal":87,"p":1.9,"c":20,"f":0.1},{"cat":"Féculents & céréales","name":"Pommes de terre rôties","kcal":149,"p":2.5,"c":27,"f":4},{"cat":"Féculents & céréales","name":"Purée de pommes de terre","kcal":113,"p":2,"c":17,"f":4},{"cat":"Féculents & céréales","name":"Patate douce cuite","kcal":90,"p":2,"c":20.7,"f":0.15},{"cat":"Féculents & céréales","name":"Flocons d’avoine","kcal":370,"p":13,"c":60,"f":7},{"cat":"Féculents & céréales","name":"Muesli sans sucre ajouté","kcal":360,"p":10,"c":65,"f":6},{"cat":"Féculents & céréales","name":"Pain blanc","kcal":265,"p":9,"c":49,"f":3.2},{"cat":"Féculents & céréales","name":"Pain complet","kcal":247,"p":13,"c":41,"f":4.2},{"cat":"Féculents & céréales","name":"Pain de seigle","kcal":259,"p":9,"c":48,"f":3.3},{"cat":"Féculents & céréales","name":"Baguette","kcal":274,"p":9,"c":56,"f":1.2},{"cat":"Féculents & céréales","name":"Tortilla de blé","kcal":312,"p":8,"c":52,"f":8},{"cat":"Féculents & céréales","name":"Galette de maïs","kcal":387,"p":8,"c":81,"f":3},{"cat":"Légumineuses & végétal","name":"Lentilles vertes cuites","kcal":116,"p":9,"c":20,"f":0.4},{"cat":"Légumineuses & végétal","name":"Lentilles corail cuites","kcal":116,"p":9,"c":20,"f":0.4},{"cat":"Légumineuses & végétal","name":"Pois chiches cuits","kcal":164,"p":8.9,"c":27.4,"f":2.6},{"cat":"Légumineuses & végétal","name":"Haricots rouges cuits","kcal":127,"p":8.7,"c":22.8,"f":0.5},{"cat":"Légumineuses & végétal","name":"Haricots blancs cuits","kcal":139,"p":9.7,"c":25,"f":0.4},{"cat":"Légumineuses & végétal","name":"Haricots noirs cuits","kcal":132,"p":8.9,"c":23.7,"f":0.5},{"cat":"Légumineuses & végétal","name":"Pois cassés cuits","kcal":118,"p":8.3,"c":21,"f":0.4},{"cat":"Légumineuses & végétal","name":"Petits pois cuits","kcal":84,"p":5.4,"c":15.6,"f":0.4},{"cat":"Légumineuses & végétal","name":"Edamame cuit","kcal":121,"p":11.9,"c":8.9,"f":5.2},{"cat":"Légumineuses & végétal","name":"Tofu ferme","kcal":144,"p":17,"c":2.8,"f":8.7},{"cat":"Légumineuses & végétal","name":"Tempeh","kcal":195,"p":20,"c":7.6,"f":11},{"cat":"Légumineuses & végétal","name":"Seitan","kcal":141,"p":25,"c":12,"f":2},{"cat":"Légumes","name":"Brocoli cuit","kcal":35,"p":2.4,"c":7.2,"f":0.4},{"cat":"Légumes","name":"Chou-fleur cuit","kcal":25,"p":1.9,"c":5,"f":0.3},{"cat":"Légumes","name":"Haricots verts cuits","kcal":35,"p":1.9,"c":7.9,"f":0.3},{"cat":"Légumes","name":"Courgette cuite","kcal":17,"p":1.2,"c":3.1,"f":0.3},{"cat":"Légumes","name":"Aubergine cuite","kcal":35,"p":0.8,"c":8.7,"f":0.2},{"cat":"Légumes","name":"Carotte crue","kcal":41,"p":0.9,"c":9.6,"f":0.2},{"cat":"Légumes","name":"Carotte cuite","kcal":35,"p":0.8,"c":8.2,"f":0.2},{"cat":"Légumes","name":"Tomate","kcal":18,"p":0.9,"c":3.9,"f":0.2},{"cat":"Légumes","name":"Tomates cerises","kcal":18,"p":0.9,"c":3.9,"f":0.2},{"cat":"Légumes","name":"Concombre","kcal":15,"p":0.7,"c":3.6,"f":0.1},{"cat":"Légumes","name":"Poivron rouge","kcal":31,"p":1,"c":6,"f":0.3},{"cat":"Légumes","name":"Poivron vert","kcal":20,"p":0.9,"c":4.6,"f":0.2},{"cat":"Légumes","name":"Épinards crus","kcal":23,"p":2.9,"c":3.6,"f":0.4},{"cat":"Légumes","name":"Épinards cuits","kcal":23,"p":3,"c":3.8,"f":0.3},{"cat":"Légumes","name":"Salade verte","kcal":15,"p":1.4,"c":2.9,"f":0.2},{"cat":"Légumes","name":"Roquette","kcal":25,"p":2.6,"c":3.7,"f":0.7},{"cat":"Légumes","name":"Champignons de Paris","kcal":22,"p":3.1,"c":3.3,"f":0.3},{"cat":"Légumes","name":"Oignon","kcal":40,"p":1.1,"c":9.3,"f":0.1},{"cat":"Légumes","name":"Poireau cuit","kcal":31,"p":0.8,"c":7.6,"f":0.2},{"cat":"Légumes","name":"Asperges cuites","kcal":22,"p":2.4,"c":4.1,"f":0.2},{"cat":"Légumes","name":"Artichaut cuit","kcal":47,"p":3.3,"c":10.5,"f":0.2},{"cat":"Légumes","name":"Betterave cuite","kcal":44,"p":1.7,"c":10,"f":0.2},{"cat":"Légumes","name":"Céleri branche","kcal":14,"p":0.7,"c":3,"f":0.2},{"cat":"Légumes","name":"Fenouil","kcal":31,"p":1.2,"c":7.3,"f":0.2},{"cat":"Légumes","name":"Chou rouge","kcal":31,"p":1.4,"c":7.4,"f":0.2},{"cat":"Légumes","name":"Chou blanc","kcal":25,"p":1.3,"c":5.8,"f":0.1},{"cat":"Légumes","name":"Choux de Bruxelles cuits","kcal":43,"p":3.4,"c":9,"f":0.3},{"cat":"Légumes","name":"Potiron cuit","kcal":26,"p":1,"c":6.5,"f":0.1},{"cat":"Légumes","name":"Butternut cuite","kcal":45,"p":1,"c":12,"f":0.1},{"cat":"Légumes","name":"Maïs doux cuit","kcal":96,"p":3.4,"c":21,"f":1.5},{"cat":"Légumes","name":"Radis","kcal":16,"p":0.7,"c":3.4,"f":0.1},{"cat":"Légumes","name":"Navet cuit","kcal":22,"p":0.7,"c":5.1,"f":0.1},{"cat":"Légumes","name":"Endive","kcal":17,"p":0.9,"c":3.4,"f":0.1},{"cat":"Fruits","name":"Banane","kcal":89,"p":1.1,"c":22.8,"f":0.3},{"cat":"Fruits","name":"Pomme","kcal":52,"p":0.3,"c":14,"f":0.2},{"cat":"Fruits","name":"Poire","kcal":57,"p":0.4,"c":15,"f":0.1},{"cat":"Fruits","name":"Orange","kcal":47,"p":0.9,"c":11.8,"f":0.1},{"cat":"Fruits","name":"Mandarine","kcal":53,"p":0.8,"c":13.3,"f":0.3},{"cat":"Fruits","name":"Clémentine","kcal":47,"p":0.9,"c":12,"f":0.2},{"cat":"Fruits","name":"Pamplemousse","kcal":42,"p":0.8,"c":10.7,"f":0.1},{"cat":"Fruits","name":"Citron","kcal":29,"p":1.1,"c":9.3,"f":0.3},{"cat":"Fruits","name":"Kiwi","kcal":61,"p":1.1,"c":14.7,"f":0.5},{"cat":"Fruits","name":"Ananas","kcal":50,"p":0.5,"c":13.1,"f":0.1},{"cat":"Fruits","name":"Mangue","kcal":60,"p":0.8,"c":15,"f":0.4},{"cat":"Fruits","name":"Papaye","kcal":43,"p":0.5,"c":10.8,"f":0.3},{"cat":"Fruits","name":"Melon","kcal":34,"p":0.8,"c":8.2,"f":0.2},{"cat":"Fruits","name":"Pastèque","kcal":30,"p":0.6,"c":7.6,"f":0.2},{"cat":"Fruits","name":"Pêche","kcal":39,"p":0.9,"c":9.5,"f":0.3},{"cat":"Fruits","name":"Nectarine","kcal":44,"p":1.1,"c":10.6,"f":0.3},{"cat":"Fruits","name":"Abricot","kcal":48,"p":1.4,"c":11.1,"f":0.4},{"cat":"Fruits","name":"Prune","kcal":46,"p":0.7,"c":11.4,"f":0.3},{"cat":"Fruits","name":"Raisin","kcal":69,"p":0.7,"c":18.1,"f":0.2},{"cat":"Fruits","name":"Fraise","kcal":32,"p":0.7,"c":7.7,"f":0.3},{"cat":"Fruits","name":"Framboise","kcal":52,"p":1.2,"c":11.9,"f":0.7},{"cat":"Fruits","name":"Myrtille","kcal":57,"p":0.7,"c":14.5,"f":0.3},{"cat":"Fruits","name":"Mûre","kcal":43,"p":1.4,"c":9.6,"f":0.5},{"cat":"Fruits","name":"Cassis","kcal":63,"p":1.4,"c":15.4,"f":0.4},{"cat":"Fruits","name":"Cerise","kcal":63,"p":1.1,"c":16,"f":0.2},{"cat":"Fruits","name":"Grenade","kcal":83,"p":1.7,"c":18.7,"f":1.2},{"cat":"Fruits","name":"Figue fraîche","kcal":74,"p":0.8,"c":19.2,"f":0.3},{"cat":"Fruits","name":"Datte sèche","kcal":282,"p":2.5,"c":75,"f":0.4},{"cat":"Fruits","name":"Raisin sec","kcal":299,"p":3.1,"c":79,"f":0.5},{"cat":"Fruits","name":"Pruneau","kcal":240,"p":2.2,"c":64,"f":0.4},{"cat":"Fruits","name":"Compote de pomme sans sucre","kcal":50,"p":0.2,"c":12,"f":0.1},{"cat":"Noix, graines & matières grasses","name":"Avocat","kcal":160,"p":2,"c":8.5,"f":14.7},{"cat":"Noix, graines & matières grasses","name":"Amandes","kcal":579,"p":21,"c":22,"f":50},{"cat":"Noix, graines & matières grasses","name":"Noix","kcal":654,"p":15,"c":14,"f":65},{"cat":"Noix, graines & matières grasses","name":"Noisettes","kcal":628,"p":15,"c":17,"f":61},{"cat":"Noix, graines & matières grasses","name":"Noix de cajou","kcal":553,"p":18,"c":30,"f":44},{"cat":"Noix, graines & matières grasses","name":"Pistaches","kcal":562,"p":20,"c":28,"f":45},{"cat":"Noix, graines & matières grasses","name":"Cacahuètes","kcal":567,"p":26,"c":16,"f":49},{"cat":"Noix, graines & matières grasses","name":"Graines de chia","kcal":486,"p":17,"c":42,"f":31},{"cat":"Noix, graines & matières grasses","name":"Graines de lin","kcal":534,"p":18,"c":29,"f":42},{"cat":"Noix, graines & matières grasses","name":"Graines de courge","kcal":559,"p":30,"c":11,"f":49},{"cat":"Noix, graines & matières grasses","name":"Graines de tournesol","kcal":584,"p":21,"c":20,"f":51},{"cat":"Noix, graines & matières grasses","name":"Beurre de cacahuète","kcal":588,"p":25,"c":20,"f":50},{"cat":"Noix, graines & matières grasses","name":"Purée d’amande","kcal":614,"p":21,"c":19,"f":56},{"cat":"Noix, graines & matières grasses","name":"Tahini","kcal":595,"p":17,"c":21,"f":54},{"cat":"Noix, graines & matières grasses","name":"Huile d’olive","kcal":884,"p":0,"c":0,"f":100},{"cat":"Noix, graines & matières grasses","name":"Huile de colza","kcal":884,"p":0,"c":0,"f":100},{"cat":"Noix, graines & matières grasses","name":"Huile de coco","kcal":892,"p":0,"c":0,"f":99},{"cat":"Noix, graines & matières grasses","name":"Beurre","kcal":717,"p":0.9,"c":0.1,"f":81},{"cat":"Noix, graines & matières grasses","name":"Margarine","kcal":717,"p":0.2,"c":0.7,"f":80},{"cat":"Boissons & divers","name":"Eau","kcal":0,"p":0,"c":0,"f":0},{"cat":"Boissons & divers","name":"Café noir sans sucre","kcal":2,"p":0.3,"c":0,"f":0},{"cat":"Boissons & divers","name":"Thé sans sucre","kcal":1,"p":0,"c":0.2,"f":0},{"cat":"Boissons & divers","name":"Jus d’orange","kcal":45,"p":0.7,"c":10.4,"f":0.2},{"cat":"Boissons & divers","name":"Jus de pomme","kcal":46,"p":0.1,"c":11.3,"f":0.1},{"cat":"Boissons & divers","name":"Boisson soja nature","kcal":33,"p":3.3,"c":0.7,"f":1.8},{"cat":"Boissons & divers","name":"Boisson amande sans sucre","kcal":15,"p":0.6,"c":0.3,"f":1.2},{"cat":"Boissons & divers","name":"Boisson avoine","kcal":46,"p":1,"c":6.7,"f":1.5},{"cat":"Boissons & divers","name":"Whey protein","kcal":390,"p":78,"c":8,"f":6},{"cat":"Boissons & divers","name":"Chocolat noir 70%","kcal":598,"p":7.8,"c":46,"f":43},{"cat":"Boissons & divers","name":"Chocolat au lait","kcal":535,"p":7.7,"c":59,"f":30},{"cat":"Boissons & divers","name":"Miel","kcal":304,"p":0.3,"c":82,"f":0},{"cat":"Boissons & divers","name":"Confiture","kcal":250,"p":0.4,"c":65,"f":0.1},{"cat":"Boissons & divers","name":"Sucre blanc","kcal":400,"p":0,"c":100,"f":0},{"cat":"Boissons & divers","name":"Ketchup","kcal":112,"p":1.3,"c":26,"f":0.2},{"cat":"Boissons & divers","name":"Mayonnaise","kcal":680,"p":1,"c":1,"f":75},{"cat":"Boissons & divers","name":"Houmous","kcal":166,"p":7.9,"c":14.3,"f":9.6},{"cat":"Boissons & divers","name":"Guacamole","kcal":150,"p":2,"c":8,"f":13},{"cat":"Boissons & divers","name":"Pizza margherita","kcal":266,"p":11,"c":33,"f":10},{"cat":"Boissons & divers","name":"Burger boeuf classique","kcal":250,"p":13,"c":24,"f":11},{"cat":"Boissons & divers","name":"Frites","kcal":312,"p":3.4,"c":41,"f":15},{"cat":"Boissons & divers","name":"Croissant","kcal":406,"p":8.2,"c":45.8,"f":21},{"cat":"Boissons & divers","name":"Pain au chocolat","kcal":423,"p":8,"c":49,"f":22},{"cat":"Boissons & divers","name":"Crêpe nature","kcal":227,"p":6,"c":28,"f":10},{"cat":"Boissons & divers","name":"Pancake","kcal":227,"p":6,"c":28,"f":10}];
+const $=id=>document.getElementById(id);
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const DEFAULT_GOALS={kcal:1600,p:115,c:160,f:55,steps:8000,sleep:8};
+const getStore=()=>JSON.parse(localStorage.getItem('fitnessComplete')||'{"days":{},"goals":{"kcal":1600,"p":115,"c":160,"f":55,"steps":8000,"sleep":8}}');
+const putStore=s=>localStorage.setItem('fitnessComplete',JSON.stringify(s));
+let store=getStore();
+function migrateGoals(){
+ if(!Array.isArray(store.customFoods))store.customFoods=[];
+ if(!store.goalHistory||!Array.isArray(store.goalHistory)){
+   store.goalHistory=[{start:'2000-01-01',...(store.goals||DEFAULT_GOALS)}];
+ }
+ store.goalHistory=store.goalHistory.map(x=>({start:x.start||'2000-01-01',...DEFAULT_GOALS,...x})).sort((a,b)=>a.start.localeCompare(b.start));
+ store.goals={...goalForDate(todayISO())}; delete store.goals.start;
+ putStore(store);
+}
+function goalForDate(date){
+ const hist=(store.goalHistory||[]).slice().sort((a,b)=>a.start.localeCompare(b.start));
+ let g={...DEFAULT_GOALS};
+ hist.forEach(x=>{if(x.start<=date)g={...g,...x}});
+ delete g.start; return g;
+}
+function goalVersionForDate(date){
+ const hist=(store.goalHistory||[]).slice().sort((a,b)=>a.start.localeCompare(b.start));
+ let found=null; hist.forEach(x=>{if(x.start<=date)found=x}); return found;
+}
+migrateGoals();
+
+function day(date){if(!store.days[date])store.days[date]={foods:[]};return store.days[date]}
+function totals(date){
+ const fs=day(date).foods||[]; let t={kcal:0,p:0,c:0,f:0};
+ fs.forEach(x=>{t.kcal+=x.kcal;t.p+=x.p;t.c+=x.c;t.f+=x.f}); return t;
+}
+function n(v,d=0){const x=Number(v);return Number.isFinite(x)?x:d}
+function r1(x){return Math.round(x*10)/10}
+function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+const GYM_TYPES={back:'Back',glutes:'Glutes',biceps_chest:'Biceps + Chest',triceps_shoulders:'Triceps + Shoulders'};
+function selectedGymType(){const x=document.querySelector('[data-gym-type]:checked');return x?x.dataset.gymType:''}
+function setGymType(type){document.querySelectorAll('[data-gym-type]').forEach(x=>x.checked=x.dataset.gymType===type)}
+function weekDates(date){
+ const base=new Date(date+'T12:00:00'),dayNum=(base.getDay()+6)%7,monday=new Date(base);monday.setDate(base.getDate()-dayNum);
+ return Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`});
+}
+function renderGymWeek(){
+ const dates=weekDates($('dayDate').value),sessions=dates.map(ds=>({ds,d:store.days[ds]})).filter(x=>x.d?.gym||x.d?.gymType);
+ $('gymWeekCount').textContent=`${sessions.length}/4 séance${sessions.length>1?'s':''} cette semaine`;
+ $('gymWeekList').textContent=sessions.length?sessions.map(x=>`${x.ds.slice(8,10)}/${x.ds.slice(5,7)} : ${GYM_TYPES[x.d.gymType]||'Séance (type non précisé)'}`).join(' • '):'Aucune séance enregistrée.';
+}
+
+function loadDay(){
+ const d=day($('dayDate').value), t=totals($('dayDate').value);
+ $('steps').value=d.steps??'';$('sleep').value=d.sleep??'';$('weight').value=d.weight??'';
+ setGymType(d.gymType||''); $('legacyGymNote').style.display=(d.gym&&!d.gymType)?'block':'none';
+ ['magnesium','vitd','omega3','creatine','whey'].forEach(k=>$(k).checked=!!d[k]);
+ renderGymWeek();
+ $('sKcal').textContent=Math.round(t.kcal);$('sProt').textContent=r1(t.p);$('sSteps').textContent=d.steps??0;$('sSleep').textContent=d.sleep??0;
+ updateScore();
+}
+function saveDay(){
+ const d=day($('dayDate').value);
+ d.steps=n($('steps').value,null);d.sleep=n($('sleep').value,null);d.weight=n($('weight').value,null);
+ d.gymType=selectedGymType(); d.gym=!!d.gymType;
+ ['magnesium','vitd','omega3','creatine','whey'].forEach(k=>d[k]=$(k).checked);
+ putStore(store);loadDay();renderAll();
+}
+function updateScore(){
+ const date=$('dayDate').value,d=day(date),t=totals(date),g=goalForDate(date);
+ const q=[Math.abs(t.kcal-g.kcal)<=100,t.p>=g.p,n(d.steps)>=g.steps,n(d.sleep)>=g.sleep,d.magnesium,d.vitd,d.omega3,d.creatine,d.whey];
+ const pct=Math.round(q.filter(Boolean).length/q.length*100);$('dailyPct').textContent=pct+'%';$('dailyBar').style.width=pct+'%';
+}
+
+function allFoods(){return [...FOOD_DB,...(store.customFoods||[]).map(x=>({...x,cat:'Mes aliments',custom:true}))]}
+function initFoods(){
+ const cats=['Toutes',...new Set(FOOD_DB.map(x=>x.cat)),'Mes aliments'];
+ $('foodCategory').innerHTML=cats.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+ $('foodCategory').addEventListener('change',renderFoodOptions);$('foodSearch').addEventListener('input',renderFoodOptions);
+ renderFoodOptions();renderMyFoods();
+}
+function renderFoodOptions(){
+ const cat=$('foodCategory').value||'Toutes',q=($('foodSearch').value||'').trim().toLocaleLowerCase('fr');
+ const list=allFoods().filter(f=>(cat==='Toutes'||f.cat===cat)&&(!q||f.name.toLocaleLowerCase('fr').includes(q)));
+ $('foodSelect').innerHTML=list.map((f,i)=>`<option value="${encodeURIComponent(JSON.stringify(f))}">${esc(f.name)} — ${f.kcal} kcal/100g</option>`).join('');
+ $('foodDbCount').textContent=`${list.length} aliment${list.length>1?'s':''} affiché${list.length>1?'s':''} • ${allFoods().length} disponibles au total`;
+}
+function selectedFood(){try{return JSON.parse(decodeURIComponent($('foodSelect').value))}catch{return null}}
+function addFoodObj(obj,qty,name){
+ const factor=qty/100,d=day($('foodDate').value);
+ d.foods=d.foods||[];d.foods.push({name,qty,kcal:n(obj.kcal)*factor,p:n(obj.p)*factor,c:n(obj.c)*factor,f:n(obj.f)*factor});
+ putStore(store);renderFood();renderAll();
+}
+$('addFood').addEventListener('click',()=>{const f=selectedFood(),q=n($('foodQty').value);if(f&&q>0)addFoodObj(f,q,f.name)});
+$('addCustom').addEventListener('click',()=>{
+ const name=$('customName').value.trim(),q=n($('customQty').value);if(!name||q<=0){alert('Ajoute un nom et une quantité valide.');return}
+ const obj={name,kcal:n($('customKcal').value),p:n($('customP').value),c:n($('customC').value),f:n($('customF').value)};
+ if($('saveCustom').checked){const i=(store.customFoods||[]).findIndex(x=>x.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));if(i>=0)store.customFoods[i]=obj;else store.customFoods.push(obj);putStore(store);renderFoodOptions();renderMyFoods()}
+ addFoodObj(obj,q,name);
+});
+function renderMyFoods(){
+ const fs=store.customFoods||[];$('myFoods').innerHTML=fs.length?'<b>Mes aliments enregistrés :</b> '+fs.map((x,i)=>`<span class="badge" style="margin:3px">${esc(x.name)} <button class="danger delCustom" data-i="${i}" style="min-height:24px;padding:0 5px">×</button></span>`).join(''):'Aucun aliment personnel enregistré.';
+ document.querySelectorAll('.delCustom').forEach(b=>b.addEventListener('click',()=>{store.customFoods.splice(Number(b.dataset.i),1);putStore(store);renderMyFoods();renderFoodOptions()}));
+}
+function renderNutritionReport(date){
+ const t=totals(date),g=goalForDate(date),delta=Math.round(g.kcal-t.kcal),totalMacro=t.p+t.c+t.f,ep=t.p*4,ec=t.c*4,ef=t.f*9,em=ep+ec+ef;
+ const line=(label,val,target,unit)=>{const d=val-target;return `<div class="reportline"><span>${label}</span><b>${r1(val)} / ${target} ${unit} <span class="${d>=0?'positive':'negative'}">(${d>=0?'+':''}${r1(d)})</span></b></div>`};
+ $('nutritionReport').innerHTML=`<div class="reportline"><span>Calories</span><b>${Math.round(t.kcal)} / ${g.kcal} kcal <span class="${delta>=0?'positive':'negative'}">(${delta>=0?delta+' restantes':Math.abs(delta)+' au-dessus'})</span></b></div>${line('Protéines',t.p,g.p,'g')}${line('Glucides',t.c,g.c,'g')}${line('Lipides',t.f,g.f,'g')}<div class="reportline"><span>Répartition énergétique</span><b>${em?Math.round(ep/em*100):0}% prot. • ${em?Math.round(ec/em*100):0}% gluc. • ${em?Math.round(ef/em*100):0}% lip.</b></div>`;
+}
+function renderFood(){
+ const date=$('foodDate').value,d=day(date),t=totals(date);
+ $('totKcal').textContent=Math.round(t.kcal);$('totP').textContent=r1(t.p)+' g';$('totC').textContent=r1(t.c)+' g';$('totF').textContent=r1(t.f)+' g';renderNutritionReport(date);
+ $('foodList').innerHTML=(d.foods||[]).map((x,i)=>`<div class="foodrow"><div><b>${esc(x.name)}</b><div class="foodmeta">${r1(x.qty)} g • ${Math.round(x.kcal)} kcal • P ${r1(x.p)} • G ${r1(x.c)} • L ${r1(x.f)}</div></div><span></span><button class="danger delFood" data-i="${i}">×</button></div>`).join('')||'<div class="small">Aucun aliment ajouté.</div>';
+ document.querySelectorAll('.delFood').forEach(b=>b.addEventListener('click',()=>{d.foods.splice(Number(b.dataset.i),1);putStore(store);renderFood();renderAll()}));if(date===$('dayDate').value)loadDay();
+}
+function setAiStatus(msg,kind=''){const el=$('aiStatus');el.textContent=msg;el.className='small '+kind}
+function renderAiResult(items,summary){
+ const total=items.reduce((a,x)=>({kcal:a.kcal+n(x.kcal),p:a.p+n(x.p),c:a.c+n(x.c),f:a.f+n(x.f)}),{kcal:0,p:0,c:0,f:0});
+ $('aiResult').innerHTML=`<div class="small"><b>${esc(summary||'Repas analysé')}</b></div>`+items.map(x=>`<div class="foodrow"><div><b>${esc(x.name)}</b><div class="foodmeta">${r1(x.qty)} g/ml • ${Math.round(x.kcal)} kcal • P ${r1(x.p)} • G ${r1(x.c)} • L ${r1(x.f)}</div></div></div>`).join('')+`<div class="reportline"><span>Total ajouté</span><b>${Math.round(total.kcal)} kcal • P ${r1(total.p)} • G ${r1(total.c)} • L ${r1(total.f)}</b></div>`;
+}
+$('clearAiMeal').addEventListener('click',()=>{$('aiMeal').value='';$('aiResult').innerHTML='';setAiStatus('')});
+$('analyzeAiMeal').addEventListener('click',async()=>{
+ const meal=$('aiMeal').value.trim();if(!meal){alert('Décris d’abord ton repas.');return}
+ const btn=$('analyzeAiMeal');btn.disabled=true;setAiStatus('Analyse du repas…');$('aiResult').innerHTML='';
+ try{
+  const res=await fetch('/api/analyze-meal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({meal,date:$('foodDate').value})});
+  const data=await res.json().catch(()=>({}));if(!res.ok){const diag=data.diagnostic?` [${data.diagnostic}]`:'';throw new Error((data.error||`Analyse impossible (HTTP ${res.status}).`)+diag);}
+  const items=Array.isArray(data.items)?data.items:[];if(!items.length)throw new Error('Aucun aliment reconnu.');
+  const d=day($('foodDate').value);d.foods=d.foods||[];items.forEach(x=>{const q=n(x.qty);if(!x.name||q<=0)return;d.foods.push({name:String(x.name),qty:q,kcal:n(x.kcal),p:n(x.p),c:n(x.c),f:n(x.f),source:'ai'});});
+  putStore(store);renderFood();renderAll();renderAiResult(items,data.summary);setAiStatus(`${items.length} aliment${items.length>1?'s':''} ajouté${items.length>1?'s':''} au journal.`,'positive');$('aiMeal').value='';
+ }catch(e){setAiStatus(e.message||'Erreur pendant l’analyse.','negative')}finally{btn.disabled=false}
+});
+
+function daysOfCurrentMonth(){
+ const base=new Date($('dayDate').value+'T12:00:00'),y=base.getFullYear(),m=base.getMonth(),count=new Date(y,m+1,0).getDate();
+ return Array.from({length:count},(_,i)=>`${y}-${String(m+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+}
+function renderTable(){
+ $('monthBody').innerHTML=daysOfCurrentMonth().map(ds=>{
+  const d=store.days[ds]||{},t=totals(ds),supp=['magnesium','vitd','omega3','creatine','whey'].filter(k=>d[k]).length;
+  return `<tr><td>${Number(ds.slice(-2))}</td><td>${t.kcal?Math.round(t.kcal):''}</td><td>${t.p?r1(t.p):''}</td><td>${t.c?r1(t.c):''}</td><td>${t.f?r1(t.f):''}</td><td>${d.steps??''}</td><td>${d.sleep??''}</td><td>${d.weight??''}</td><td>${d.gym?(GYM_TYPES[d.gymType]||'✓'):''}</td><td>${supp?`${supp}/5`:''}</td></tr>`
+ }).join('');
+}
+function drawChart(id,values,target,label){
+ const c=$(id),ctx=c.getContext('2d'),W=c.width,H=c.height,pad=32;
+ ctx.clearRect(0,0,W,H);ctx.font='12px Arial';ctx.fillStyle='#72807c';ctx.strokeStyle='#dbe2df';ctx.lineWidth=1;
+ const nums=values.filter(v=>v!=null);let min=nums.length?Math.min(...nums,target??Infinity):0,max=nums.length?Math.max(...nums,target??0):1;
+ if(!Number.isFinite(min))min=0;if(max===min){max=min+1}
+ const extra=(max-min)*.15||1;min=Math.max(0,min-extra);max+=extra;
+ for(let i=0;i<4;i++){let y=pad+(H-2*pad)*i/3;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();let val=max-(max-min)*i/3;ctx.fillText(Math.round(val),2,y+4)}
+ if(target!=null){let y=pad+(max-target)/(max-min)*(H-2*pad);ctx.setLineDash([5,4]);ctx.strokeStyle='#8a9a95';ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();ctx.setLineDash([])}
+ ctx.strokeStyle='#315f55';ctx.lineWidth=2.5;ctx.beginPath();let started=false;
+ values.forEach((v,i)=>{if(v==null)return;let x=pad+(W-2*pad)*(values.length===1?0:i/(values.length-1));let y=pad+(max-v)/(max-min)*(H-2*pad);if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)});
+ ctx.stroke();ctx.fillStyle='#315f55';values.forEach((v,i)=>{if(v==null)return;let x=pad+(W-2*pad)*(values.length===1?0:i/(values.length-1));let y=pad+(max-v)/(max-min)*(H-2*pad);ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill()});
+ ctx.fillStyle='#20302c';ctx.fillText(label,pad,15);
+}
+function renderCharts(){
+ const ds=daysOfCurrentMonth(),g=goalForDate($('dayDate').value);
+ drawChart('weightChart',ds.map(x=>store.days[x]?.weight??null),null,'Poids (kg)');
+ drawChart('kcalChart',ds.map(x=>{let t=totals(x);return t.kcal?Math.round(t.kcal):null}),g.kcal,'Calories');
+ drawChart('proteinChart',ds.map(x=>{let t=totals(x);return t.p?r1(t.p):null}),g.p,'Protéines (g)');
+ drawChart('stepsChart',ds.map(x=>store.days[x]?.steps??null),g.steps,'Pas');
+ drawChart('sleepChart',ds.map(x=>store.days[x]?.sleep??null),g.sleep,'Sommeil (h)');
+}
+function renderGoalSummary(){
+ const date=$('dayDate').value||todayISO(),g=goalForDate(date);
+ $('goalSummary').textContent=`Objectifs au ${date.split('-').reverse().join('/')} : ${g.kcal} kcal • ${g.p} g protéines • ${g.steps} pas • ${g.sleep} h sommeil`;
+}
+function renderGoalHistory(){
+ const hist=(store.goalHistory||[]).slice().sort((a,b)=>b.start.localeCompare(a.start));
+ $('goalHistory').innerHTML=hist.map((g,i)=>`<div style="padding:9px 0;border-bottom:1px solid #eef1f0"><b>À partir du ${g.start.split('-').reverse().join('/')}</b><br>${g.kcal} kcal • P ${g.p} g • G ${g.c} g • L ${g.f} g • ${g.steps} pas • ${g.sleep} h <button class="secondary editGoal" data-start="${g.start}" style="min-height:32px;padding:4px 8px;margin-left:5px">Modifier</button>${hist.length>1?` <button class="danger delGoal" data-start="${g.start}" style="min-height:32px;padding:4px 8px">Supprimer</button>`:''}</div>`).join('');
+ document.querySelectorAll('.editGoal').forEach(b=>b.addEventListener('click',()=>loadGoalVersion(b.dataset.start)));
+ document.querySelectorAll('.delGoal').forEach(b=>b.addEventListener('click',()=>{
+   if(!confirm('Supprimer cette version des objectifs ?'))return;
+   store.goalHistory=store.goalHistory.filter(x=>x.start!==b.dataset.start);putStore(store);renderGoals();renderAll();loadDay();
+ }));
+}
+function loadGoalVersion(start){
+ const g=(store.goalHistory||[]).find(x=>x.start===start)||{start,...goalForDate(start)};
+ $('goalStartDate').value=start;$('goalKcal').value=g.kcal;$('goalP').value=g.p;$('goalC').value=g.c;$('goalF').value=g.f;$('goalSteps').value=g.steps;$('goalSleep').value=g.sleep;
+}
+function renderGoals(){
+ const start=$('goalStartDate').value||todayISO(); $('goalStartDate').value=start;
+ const exact=(store.goalHistory||[]).find(x=>x.start===start),g=exact||goalForDate(start);
+ $('goalKcal').value=g.kcal;$('goalP').value=g.p;$('goalC').value=g.c;$('goalF').value=g.f;$('goalSteps').value=g.steps;$('goalSleep').value=g.sleep;renderGoalHistory();renderGoalSummary();
+}
+function renderAll(){renderTable();renderCharts();renderGoalSummary();if($('foodDate').value)renderFood()}
+$('goalStartDate').addEventListener('change',()=>loadGoalVersion($('goalStartDate').value));
+$('saveGoals').addEventListener('click',()=>{
+ const start=$('goalStartDate').value||todayISO();
+ const next={start,kcal:n($('goalKcal').value,1600),p:n($('goalP').value,115),c:n($('goalC').value,160),f:n($('goalF').value,55),steps:n($('goalSteps').value,8000),sleep:n($('goalSleep').value,8)};
+ const idx=(store.goalHistory||[]).findIndex(x=>x.start===start);if(idx>=0)store.goalHistory[idx]=next;else store.goalHistory.push(next);
+ store.goalHistory.sort((a,b)=>a.start.localeCompare(b.start));store.goals={...goalForDate(todayISO())};putStore(store);renderGoals();renderAll();loadDay();alert('Objectifs enregistrés à partir du '+start.split('-').reverse().join('/'));
+});
+$('saveDay').addEventListener('click',saveDay);
+$('clearDay').addEventListener('click',()=>{const ds=$('dayDate').value;store.days[ds]={foods:store.days[ds]?.foods||[]};putStore(store);loadDay();renderAll()});
+$('dayDate').addEventListener('change',()=>{loadDay();renderAll()});
+$('foodDate').addEventListener('change',renderFood);
+['steps','sleep','weight','magnesium','vitd','omega3','creatine','whey'].forEach(k=>$(k).addEventListener('change',updateScore));
+document.querySelectorAll('[data-gym-type]').forEach(x=>x.addEventListener('change',()=>{if(x.checked)document.querySelectorAll('[data-gym-type]').forEach(y=>{if(y!==x)y.checked=false});$('legacyGymNote').style.display='none'}));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.page).classList.add('active');if(b.dataset.page==='charts')setTimeout(renderCharts,20)}));
+$('exportData').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sauvegarde-suivi-fitness.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)});
+$('importData').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{store=JSON.parse(rd.result);migrateGoals();putStore(store);renderGoals();loadDay();renderAll();alert('Sauvegarde importée.')}catch{alert('Fichier invalide.')}};rd.readAsText(f)});
+
+let deferredPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').style.display='block'});
+$('installBtn').addEventListener('click',async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').style.display='none'}});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
+
+$('dayDate').value=todayISO();$('foodDate').value=todayISO();initFoods();renderGoals();loadDay();renderAll();
+</script>
+</body>
+</html>
